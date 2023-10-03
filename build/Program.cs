@@ -22,6 +22,7 @@ class Program
 		Directory.CreateDirectory(OutputFolder);
 
 		Log.WriteLine($"Building article folder: {Path.GetFullPath(ArticlesFolder)}");
+		var siteBuilder = new SiteBuilder();
 
 		await Parallel.ForEachAsync(
 			new FileSystemEnumerable<(string, bool)>(
@@ -33,25 +34,30 @@ class Program
 					return (Path.Join(folder, entry.FileName), entry.IsDirectory);
 				},
 				new() { RecurseSubdirectories = true }),
-			(item, _) =>
+			async (item, _) =>
 		{
 			var (relativePath, isDirectory) = item;
 			var srcFile = Path.Join(ArticlesFolder, relativePath);
-			var destFile = Path.Join(OutputFolder, relativePath);
+			var destFile = Path.Join(OutputFolder, isDirectory ? relativePath : Path.ChangeExtension(relativePath, ".html"));
 			if (isDirectory) {
 				Directory.CreateDirectory(destFile);
-				return ValueTask.CompletedTask;
+				return;
 			}
+
+			if (Path.GetExtension(srcFile) != ".md")
+				throw new ArgumentOutOfRangeException($"[{relativePath}]: only support markdown file");
 
 			// skip file without change
 			var destFileInfo = new FileInfo(destFile);
 			if (!force && destFileInfo.Exists && destFileInfo.LastWriteTimeUtc >= File.GetLastWriteTimeUtc(srcFile))
-				return ValueTask.CompletedTask;
+				return;
 
 			// TODO: as we parallel, need an identifier to distinct iter when we have more log
 			Log.DiagWriteLine($"Building file: {relativePath}");
-			File.Copy(srcFile, destFile, true);
-			return ValueTask.CompletedTask;
+
+			var input = await File.ReadAllTextAsync(srcFile);
+			using var output = new FileStream(destFile, FileMode.Create, FileAccess.Write);
+			await siteBuilder.BuildMarkdown(input, output);
 		});
 	}
 }

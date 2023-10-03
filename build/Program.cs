@@ -7,8 +7,11 @@
 	/// My blog's build system.
 	/// </summary>
 	/// <param name="force">force generation</param>
-	static void Main(bool force = false)
+	/// <param name="verbosity"></param>
+	static void Main(bool force = false, Verbosity verbosity = Verbosity.Normal)
 	{
+		Log.level = verbosity;
+
 		var articles = new DirectoryInfo(ArticlesFolder);
 		if (!articles.Exists)
 			throw new DirectoryNotFoundException($"Articles directory not found: {articles.FullName}");
@@ -16,6 +19,8 @@
 		if (force && Directory.Exists(OutputFolder))
 			Directory.Delete(OutputFolder, true);
 		var output = Directory.CreateDirectory(OutputFolder);
+
+		Log.WriteLine($"Building article folder: {articles.FullName}");
 
 		static void CopyDirectory(DirectoryInfo dir, string dest, bool force)
 		{

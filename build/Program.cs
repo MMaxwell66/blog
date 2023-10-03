@@ -57,7 +57,9 @@ class Program
 
 			var input = await File.ReadAllTextAsync(srcFile);
 			using var output = new FileStream(destFile, FileMode.Create, FileAccess.Write);
-			await siteBuilder.BuildMarkdown(input, output);
+
+			var title = SiteBuilder.GetTitle(relativePath);
+			await siteBuilder.BuildMarkdown(output, input, title);
 		});
 	}
 }

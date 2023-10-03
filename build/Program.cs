@@ -10,7 +10,7 @@ class Program
 	/// </summary>
 	/// <param name="force">force generation</param>
 	/// <param name="verbosity"></param>
-	static void Main(bool force = false, Verbosity verbosity = Verbosity.Normal)
+	static async Task Main(bool force = false, Verbosity verbosity = Verbosity.Normal)
 	{
 		Log.level = verbosity;
 
@@ -23,7 +23,7 @@ class Program
 
 		Log.WriteLine($"Building article folder: {Path.GetFullPath(ArticlesFolder)}");
 
-		foreach (var (file, isDirectory) in
+		await Parallel.ForEachAsync(
 			new FileSystemEnumerable<(string, bool)>(
 				ArticlesFolder,
 				(ref FileSystemEntry entry) =>
@@ -32,22 +32,26 @@ class Program
 					if (folder.Length > 0) folder = folder[1..];
 					return (Path.Join(folder, entry.FileName), entry.IsDirectory);
 				},
-				new() { RecurseSubdirectories = true }))
+				new() { RecurseSubdirectories = true }),
+			(item, _) =>
 		{
-			var srcFile = Path.Join(ArticlesFolder, file);
-			var destFile = Path.Join(OutputFolder, file);
+			var (relativePath, isDirectory) = item;
+			var srcFile = Path.Join(ArticlesFolder, relativePath);
+			var destFile = Path.Join(OutputFolder, relativePath);
 			if (isDirectory) {
 				Directory.CreateDirectory(destFile);
-				continue;
+				return ValueTask.CompletedTask;
 			}
 
 			// skip file without change
 			var destFileInfo = new FileInfo(destFile);
 			if (!force && destFileInfo.Exists && destFileInfo.LastWriteTimeUtc >= File.GetLastWriteTimeUtc(srcFile))
-				continue;
+				return ValueTask.CompletedTask;
 
-			Log.DiagWriteLine($"Building file: {file}");
+			// TODO: as we parallel, need an identifier to distinct iter when we have more log
+			Log.DiagWriteLine($"Building file: {relativePath}");
 			File.Copy(srcFile, destFile, true);
-		}
+			return ValueTask.CompletedTask;
+		});
 	}
 }

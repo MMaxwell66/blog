@@ -1,4 +1,6 @@
-﻿class Program
+﻿using System.IO.Enumeration;
+
+class Program
 {
 	private const string ArticlesFolder = "articles";
 	private const string OutputFolder = "output";
@@ -12,31 +14,40 @@
 	{
 		Log.level = verbosity;
 
-		var articles = new DirectoryInfo(ArticlesFolder);
-		if (!articles.Exists)
-			throw new DirectoryNotFoundException($"Articles directory not found: {articles.FullName}");
+		if (!Directory.Exists(ArticlesFolder))
+			throw new DirectoryNotFoundException($"Articles directory not found: {Path.GetFullPath(ArticlesFolder)}");
 
 		if (force && Directory.Exists(OutputFolder))
 			Directory.Delete(OutputFolder, true);
-		var output = Directory.CreateDirectory(OutputFolder);
+		Directory.CreateDirectory(OutputFolder);
 
-		Log.WriteLine($"Building article folder: {articles.FullName}");
+		Log.WriteLine($"Building article folder: {Path.GetFullPath(ArticlesFolder)}");
 
-		static void CopyDirectory(DirectoryInfo dir, string dest, bool force)
+		foreach (var (file, isDirectory) in
+			new FileSystemEnumerable<(string, bool)>(
+				ArticlesFolder,
+				(ref FileSystemEntry entry) =>
+				{
+					var folder  = entry.Directory[entry.RootDirectory.Length..];
+					if (folder.Length > 0) folder = folder[1..];
+					return (Path.Join(folder, entry.FileName), entry.IsDirectory);
+				},
+				new() { RecurseSubdirectories = true }))
 		{
-			Directory.CreateDirectory(dest);
-			foreach (var subDir in dir.GetDirectories())
-				CopyDirectory(subDir, Path.Combine(dest, subDir.Name), force);
-
-			foreach (var file in dir.GetFiles())
-			{
-				var destFile = Path.Combine(dest, file.Name);
-				var destFileInfo = new FileInfo(destFile);
-				if (!force && destFileInfo.Exists && destFileInfo.LastWriteTimeUtc >= file.LastWriteTimeUtc)
-					continue;
-				file.CopyTo(destFile, true);
+			var srcFile = Path.Join(ArticlesFolder, file);
+			var destFile = Path.Join(OutputFolder, file);
+			if (isDirectory) {
+				Directory.CreateDirectory(destFile);
+				continue;
 			}
+
+			// skip file without change
+			var destFileInfo = new FileInfo(destFile);
+			if (!force && destFileInfo.Exists && destFileInfo.LastWriteTimeUtc >= File.GetLastWriteTimeUtc(srcFile))
+				continue;
+
+			Log.DiagWriteLine($"Building file: {file}");
+			File.Copy(srcFile, destFile, true);
 		}
-		CopyDirectory(articles, OutputFolder, force);
 	}
 }

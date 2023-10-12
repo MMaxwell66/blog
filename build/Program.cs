@@ -56,7 +56,7 @@ class Program
 			Log.DiagWriteLine($"Building file: {relativePath}");
 
 			var input = await File.ReadAllTextAsync(srcFile);
-			using var output = new FileStream(destFile, FileMode.Create, FileAccess.Write);
+			using var output = new StreamWriter(destFile);
 
 			var title = SiteBuilder.GetTitle(relativePath);
 			await siteBuilder.BuildMarkdown(output, input, title);

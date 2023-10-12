@@ -1,4 +1,3 @@
-using System.Text;
 using Markdig;
 
 internal class SiteBuilder
@@ -14,39 +13,30 @@ internal class SiteBuilder
 			return Path.GetFileNameWithoutExtension(srcFileRel);
 	}
 
-	public async Task BuildMarkdown(FileStream output, string content, string title)
+	public async Task BuildMarkdown(TextWriter output, string content, string title)
 	{
 		await WriteHeader(output, title);
-		_ = Markdown.ToHtml(content, new StreamWriter(output));
+		_ = Markdown.ToHtml(content, output);
 		await WriteFooter(output);
 	}
 
-	private static readonly byte[] HeaderBytes1 = Encoding.ASCII.GetBytes("""
+	private static async Task WriteHeader(TextWriter output, string title)
+	{
+		// TODO(JJ): find the appropriate value for title
+		await output.WriteAsync($"""
 		<!DOCTYPE html>
 		<html lang="en">
 		<head>
-			<meta charset="utf-8" />
-			<title>
-		""");
-	private static readonly byte[] HeaderBytes2 = Encoding.ASCII.GetBytes("""
-		</title>
+			<meta charset="utf-8">
+			<title>{title}</title>
 		</head>
 		<body>
 
 		""");
-
-	private static async Task WriteHeader(FileStream output, string title)
-	{
-		// TODO(JJ): find the appropriate value for title
-		await output.WriteAsync(HeaderBytes1);
-		await output.WriteAsync(Encoding.UTF8.GetBytes(title));
-		await output.WriteAsync(HeaderBytes2);
 	}
 
-	private static readonly byte[] FooterBytes = Encoding.ASCII.GetBytes("</body>\n</html>");
-
-	private static async Task WriteFooter(FileStream output)
+	private static async Task WriteFooter(TextWriter output)
 	{
-		await output.WriteAsync(FooterBytes);
+		await output.WriteAsync("</body>\n</html>");
 	}
 }

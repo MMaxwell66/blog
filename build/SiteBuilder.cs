@@ -1,52 +1,50 @@
-using System.Text;
 using Markdig;
+using Markdig.Extensions.Yaml;
+using Markdig.Syntax;
 
 internal class SiteBuilder
 {
-	private static readonly string IndexMd = $"{Path.DirectorySeparatorChar}index.md";
-	public static string GetTitle(string srcFileRel)
+	private static readonly MarkdownPipeline pipeline = new MarkdownPipelineBuilder()
+		.UseYamlFrontMatter()
+		.Build();
+	public async Task BuildMarkdown(TextWriter output, string content)
 	{
-		if (srcFileRel.EndsWith(IndexMd))
-			return Path.GetDirectoryName(srcFileRel)!;
-		else if (srcFileRel == "index.md")
-			return "Welcome!";
-		else
-			return Path.GetFileNameWithoutExtension(srcFileRel);
-	}
+		var document = Markdown.Parse(content, pipeline);
 
-	public async Task BuildMarkdown(FileStream output, string content, string title)
-	{
+		var title = GetTitle(document);
+		if (title.IsEmpty)
+			title = "Welcome!".AsMemory();
+
 		await WriteHeader(output, title);
-		_ = Markdown.ToHtml(content, new StreamWriter(output));
+		Markdown.ToHtml(document, output, pipeline);
 		await WriteFooter(output);
 	}
 
-	private static readonly byte[] HeaderBytes1 = Encoding.ASCII.GetBytes("""
+	private static ReadOnlyMemory<char> GetTitle(MarkdownDocument document)
+	{
+		var yamlBlock = document.Descendants<YamlFrontMatterBlock>().FirstOrDefault();
+		if (yamlBlock is null)
+			return default;
+		var yaml = Utils.ParseYaml(yamlBlock.Lines);
+		return yaml.First(kv => kv.Item1.AsSpan().SequenceEqual("title")).Item2.AsMemory();
+	}
+
+	private static Task WriteHeader(TextWriter output, ReadOnlyMemory<char> title)
+	{
+		return output.WriteAsync($"""
 		<!DOCTYPE html>
 		<html lang="en">
 		<head>
-			<meta charset="utf-8" />
-			<title>
-		""");
-	private static readonly byte[] HeaderBytes2 = Encoding.ASCII.GetBytes("""
-		</title>
+			<meta charset="utf-8">
+			<title>{title.Span}</title>
 		</head>
 		<body>
 
 		""");
-
-	private static async Task WriteHeader(FileStream output, string title)
-	{
-		// TODO(JJ): find the appropriate value for title
-		await output.WriteAsync(HeaderBytes1);
-		await output.WriteAsync(Encoding.UTF8.GetBytes(title));
-		await output.WriteAsync(HeaderBytes2);
 	}
 
-	private static readonly byte[] FooterBytes = Encoding.ASCII.GetBytes("</body>\n</html>");
-
-	private static async Task WriteFooter(FileStream output)
+	private static Task WriteFooter(TextWriter output)
 	{
-		await output.WriteAsync(FooterBytes);
+		return output.WriteAsync("</body>\n</html>");
 	}
 }

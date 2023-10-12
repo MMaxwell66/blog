@@ -1,42 +1,50 @@
 using Markdig;
+using Markdig.Extensions.Yaml;
+using Markdig.Syntax;
 
 internal class SiteBuilder
 {
-	private static readonly string IndexMd = $"{Path.DirectorySeparatorChar}index.md";
-	public static string GetTitle(string srcFileRel)
+	private static readonly MarkdownPipeline pipeline = new MarkdownPipelineBuilder()
+		.UseYamlFrontMatter()
+		.Build();
+	public async Task BuildMarkdown(TextWriter output, string content)
 	{
-		if (srcFileRel.EndsWith(IndexMd))
-			return Path.GetDirectoryName(srcFileRel)!;
-		else if (srcFileRel == "index.md")
-			return "Welcome!";
-		else
-			return Path.GetFileNameWithoutExtension(srcFileRel);
-	}
+		var document = Markdown.Parse(content, pipeline);
 
-	public async Task BuildMarkdown(TextWriter output, string content, string title)
-	{
+		var title = GetTitle(document);
+		if (title.IsEmpty)
+			title = "Welcome!".AsMemory();
+
 		await WriteHeader(output, title);
-		_ = Markdown.ToHtml(content, output);
+		Markdown.ToHtml(document, output, pipeline);
 		await WriteFooter(output);
 	}
 
-	private static async Task WriteHeader(TextWriter output, string title)
+	private static ReadOnlyMemory<char> GetTitle(MarkdownDocument document)
 	{
-		// TODO(JJ): find the appropriate value for title
-		await output.WriteAsync($"""
+		var yamlBlock = document.Descendants<YamlFrontMatterBlock>().FirstOrDefault();
+		if (yamlBlock is null)
+			return default;
+		var yaml = Utils.ParseYaml(yamlBlock.Lines);
+		return yaml.First(kv => kv.Item1.AsSpan().SequenceEqual("title")).Item2.AsMemory();
+	}
+
+	private static Task WriteHeader(TextWriter output, ReadOnlyMemory<char> title)
+	{
+		return output.WriteAsync($"""
 		<!DOCTYPE html>
 		<html lang="en">
 		<head>
 			<meta charset="utf-8">
-			<title>{title}</title>
+			<title>{title.Span}</title>
 		</head>
 		<body>
 
 		""");
 	}
 
-	private static async Task WriteFooter(TextWriter output)
+	private static Task WriteFooter(TextWriter output)
 	{
-		await output.WriteAsync("</body>\n</html>");
+		return output.WriteAsync("</body>\n</html>");
 	}
 }

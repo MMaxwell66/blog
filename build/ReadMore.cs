@@ -6,7 +6,7 @@ using Markdig.Renderers;
 using Markdig.Renderers.Html;
 using Markdig.Syntax;
 
-public class ReadMoreExtension : IMarkdownExtension
+internal class ReadMoreExtension : IMarkdownExtension
 {
 	public void Setup(MarkdownPipelineBuilder pipeline)
 	{
@@ -20,14 +20,14 @@ public class ReadMoreExtension : IMarkdownExtension
 	}
 }
 
-public class ReadMoreBlock : LeafBlock
+internal class ReadMoreBlock : LeafBlock
 {
 	public ReadMoreBlock(BlockParser parser) : base(parser)
 	{
 	}
 }
 
-public class ReadMoreBlockParser : BlockParser
+internal class ReadMoreBlockParser : BlockParser
 {
 	public ReadMoreBlockParser()
 	{
@@ -74,7 +74,7 @@ public class ReadMoreBlockParser : BlockParser
 	}
 }
 
-public class ReadMoreHtmlRenderer : HtmlObjectRenderer<ReadMoreBlock>
+internal class ReadMoreHtmlRenderer : HtmlObjectRenderer<ReadMoreBlock>
 {
 	protected override void Write(HtmlRenderer renderer, ReadMoreBlock obj)
 	{
@@ -83,7 +83,7 @@ public class ReadMoreHtmlRenderer : HtmlObjectRenderer<ReadMoreBlock>
 	}
 }
 
-public static class ReadMoreExtensions
+internal static class ReadMoreExtensions
 {
 	public static bool TrimReadMore(this MarkdownDocument document)
 	{
@@ -92,7 +92,7 @@ public static class ReadMoreExtensions
 			return false;
 		var readMoreBlock = enumerator.Current;
 		if (enumerator.MoveNext())
-			throw new ArgumentException($"More than one read more block found ({enumerator.Current.ToPositionText()}).");
+			Utils.ThrowArgumentException($"More than one read more block found ({enumerator.Current.ToPositionText()}).");
 
 		var block = readMoreBlock as Block;
 		Debug.Assert(block.Parent != null);

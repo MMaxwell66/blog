@@ -1,4 +1,5 @@
-﻿using System.IO.Enumeration;
+﻿using System.Diagnostics;
+using System.IO.Enumeration;
 
 class Program
 {
@@ -34,6 +35,7 @@ class Program
 					return (Path.Join(folder, entry.FileName), entry.IsDirectory);
 				},
 				new() { RecurseSubdirectories = true }),
+			new ParallelOptions(){ MaxDegreeOfParallelism = Debugger.IsAttached ? 1 : -1 },
 			async (item, _) =>
 		{
 			var (relativePath, isDirectory) = item;
@@ -58,8 +60,7 @@ class Program
 			var input = await File.ReadAllTextAsync(srcFile);
 			using var output = new StreamWriter(destFile);
 
-			var title = SiteBuilder.GetTitle(relativePath);
-			await siteBuilder.BuildMarkdown(output, input, title);
+			await siteBuilder.BuildMarkdown(output, input);
 		});
 	}
 }

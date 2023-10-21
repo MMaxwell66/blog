@@ -3,9 +3,6 @@ using System.IO.Enumeration;
 
 class Program
 {
-	private const string ArticlesFolder = "articles";
-	private const string OutputFolder = "output";
-
 	/// <summary>
 	/// My blog's build system.
 	/// </summary>
@@ -15,19 +12,19 @@ class Program
 	{
 		Log.level = verbosity;
 
-		if (!Directory.Exists(ArticlesFolder))
-			throw new DirectoryNotFoundException($"Articles directory not found: {Path.GetFullPath(ArticlesFolder)}");
+		if (!Directory.Exists(SiteBuilder.ArticlesFolder))
+			throw new DirectoryNotFoundException($"Articles directory not found: {Path.GetFullPath(SiteBuilder.ArticlesFolder)}");
 
-		if (force && Directory.Exists(OutputFolder))
-			Directory.Delete(OutputFolder, true);
-		Directory.CreateDirectory(OutputFolder);
+		if (force && Directory.Exists(SiteBuilder.OutputFolder))
+			Directory.Delete(SiteBuilder.OutputFolder, true);
+		Directory.CreateDirectory(SiteBuilder.OutputFolder);
 
-		Log.WriteLine($"Building article folder: {Path.GetFullPath(ArticlesFolder)}");
+		Log.WriteLine($"Building article folder: {Path.GetFullPath(SiteBuilder.ArticlesFolder)}");
 		var siteBuilder = new SiteBuilder();
 
 		await Parallel.ForEachAsync(
 			new FileSystemEnumerable<(string, bool)>(
-				ArticlesFolder,
+				SiteBuilder.ArticlesFolder,
 				(ref FileSystemEntry entry) =>
 				{
 					var folder  = entry.Directory[entry.RootDirectory.Length..];
@@ -39,8 +36,8 @@ class Program
 			async (item, _) =>
 		{
 			var (relativePath, isDirectory) = item;
-			var srcFile = Path.Join(ArticlesFolder, relativePath);
-			var destFile = Path.Join(OutputFolder, isDirectory ? relativePath : Path.ChangeExtension(relativePath, ".html"));
+			var srcFile = Path.Join(SiteBuilder.ArticlesFolder, relativePath);
+			var destFile = Path.Join(SiteBuilder.OutputFolder, isDirectory ? relativePath : Path.ChangeExtension(relativePath, ".html"));
 			if (isDirectory) {
 				Directory.CreateDirectory(destFile);
 				return;
@@ -60,7 +57,9 @@ class Program
 			var input = await File.ReadAllTextAsync(srcFile);
 			using var output = new StreamWriter(destFile);
 
-			await siteBuilder.BuildMarkdown(output, input);
+			await siteBuilder.BuildArticle(output, input);
 		});
+
+		await siteBuilder.PostArticlesBuild();
 	}
 }

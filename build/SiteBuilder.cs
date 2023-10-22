@@ -3,6 +3,13 @@ internal partial class SiteBuilder
 	public const string ArticlesFolder = "articles";
 	public const string OutputFolder = "output";
 
+	public readonly Uri? host;
+
+	public SiteBuilder(Uri? host)
+	{
+		this.host = host;
+	}
+
 	public Task PostArticlesBuild()
 	{
 		return BuildIndexPage();

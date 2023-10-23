@@ -62,7 +62,8 @@ class Program
 			var input = await File.ReadAllTextAsync(srcFile);
 			using var output = new StreamWriter(destFile);
 
-			await siteBuilder.BuildArticle(output, input);
+			var destUrlPath = Path.ChangeExtension(relativePath, null);
+			await siteBuilder.BuildArticle(destUrlPath, output, input);
 		});
 
 		await siteBuilder.PostArticlesBuild();

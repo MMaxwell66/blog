@@ -21,7 +21,7 @@ $"""
 $"""
 	<article>
 		<header>
-			<h2><a href="{article.UrlPath}" rel="bookmark">{article.Title}</a></h2>
+			<h2 class="title"><a href="{article.UrlPath}" rel="bookmark">{article.Title}</a></h2>
 			<!-- TODO: post time & updated time -->
 			<!-- <div><span></span></div> -->
 		</header>

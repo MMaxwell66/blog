@@ -33,11 +33,18 @@ article {
 article > header {
 	margin-bottom: 1.75em;
 }
-article > header > h2 > a {
+
+.title {
+	margin: .67em 0;
+}
+.title a,
+.title a:visited {
 	font-size: 24px;
 	color: #333;
 }
-article > header > h2 > a:hover {
+.title a:hover,
+.title a:focus,
+.title a:active {
 	font-size: 24px;
 	color: #bae1e1;
 }

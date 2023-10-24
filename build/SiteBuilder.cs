@@ -10,17 +10,52 @@ internal partial class SiteBuilder
 	public const string H1Title = "JJ's blog";
 	public const string ArticleTitleSuffix = H1Title;
 
-	public readonly Uri? host;
+	private readonly Uri? host;
+	private readonly bool force;
 	private readonly ConcurrentBag<Article> articles = new();
 
-	public SiteBuilder(Uri? host)
+	public SiteBuilder(Uri? host, bool force)
 	{
 		this.host = host;
+		this.force = force;
 	}
 
 	public Task PostArticlesBuild()
 	{
-		return BuildIndexPage();
+		var tasks = new List<Task>()
+		{
+			BuildIndexPage(),
+			CopyAssets(),
+		};
+
+		return Task.WhenAll(tasks);
+	}
+
+	private async Task CopyAssets()
+	{
+		var cssRelPath = Path.Join("assets", "style.css");
+		var cssInputInfo = new FileInfo(cssRelPath);
+		if (!cssInputInfo.Exists)
+			throw new ArgumentException("Missing style.css CSS file.");
+		
+		var cssOutputPath = Path.Join(OutputFolder, cssRelPath);
+		var cssOutputInfo = new FileInfo(cssOutputPath);
+		if (!force && cssOutputInfo.Exists && cssOutputInfo.LastWriteTimeUtc >= cssInputInfo.LastWriteTimeUtc)
+		{
+			return;
+		}
+		else if (force)
+		{
+			// Not elegant, but easy to do now.
+			var data = await new HttpClient().GetStringAsync("https://necolas.github.io/normalize.css/latest/normalize.css");
+			if (!data.Contains("v8.0.1"))
+				throw new ArgumentException("normalize.css is out of date");
+		}
+
+		if (!Directory.Exists(Path.Join(OutputFolder, "assets")))
+			Directory.CreateDirectory(Path.Join(OutputFolder, "assets"));
+
+		cssInputInfo.CopyTo(cssOutputPath, true);
 	}
 
 	private static Task WriteHeader(TextWriter output, ReadOnlySpan<char> title, string suffix)
@@ -31,6 +66,7 @@ internal partial class SiteBuilder
 		<head>
 			<meta charset="utf-8">
 			<title>{title} | {suffix}</title>
+			<link rel="stylesheet" href="assets/style.css"/>
 		</head>
 		<body>
 

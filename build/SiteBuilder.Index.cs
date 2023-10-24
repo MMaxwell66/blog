@@ -25,7 +25,7 @@ $"""
 			<!-- TODO: post time & updated time -->
 			<!-- <div><span></span></div> -->
 		</header>
-		<div>
+		<div class="content">
 
 """);
 			await output.WriteAsync(article.ReadLessText);

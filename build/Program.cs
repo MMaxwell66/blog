@@ -25,7 +25,7 @@ class Program
 
 		Log.WriteLine($"Building for '{host?.ToString() ?? "localhost"}' ...");
 		Log.WriteLine($"Building article folder: {Path.GetFullPath(SiteBuilder.ArticlesFolder)}");
-		var siteBuilder = new SiteBuilder(host);
+		var siteBuilder = new SiteBuilder(host, force);
 
 		await Parallel.ForEachAsync(
 			new FileSystemEnumerable<(string, bool)>(

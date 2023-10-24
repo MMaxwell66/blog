@@ -66,6 +66,7 @@ internal partial class SiteBuilder
 		<head>
 			<meta charset="utf-8">
 			<title>{title} | {suffix}</title>
+			<meta name="viewport" content="width=device-width, initial-scale=1">
 			<link rel="stylesheet" href="assets/style.css">
 		</head>
 		<body>

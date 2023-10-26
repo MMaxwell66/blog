@@ -59,11 +59,8 @@ class Program
 			// TODO: as we parallel, need an identifier to distinct iter when we have more log
 			Log.DiagWriteLine($"Building file: {relativePath}");
 
-			var input = await File.ReadAllTextAsync(srcFile);
-			using var output = new StreamWriter(destFile);
-
 			var destUrlPath = Path.ChangeExtension(relativePath, null);
-			await siteBuilder.BuildArticle(destUrlPath, output, input);
+			await siteBuilder.BuildArticle(destUrlPath, destFile, srcFile);
 		});
 
 		await siteBuilder.PostArticlesBuild();

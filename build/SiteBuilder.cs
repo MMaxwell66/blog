@@ -83,6 +83,7 @@ internal partial class SiteBuilder
 		public string UrlPath;
 		public string Title;
 		public DateTime PostTime;
+		public DateTime EditTime;
 		public string ReadLessText;
 	}
 }

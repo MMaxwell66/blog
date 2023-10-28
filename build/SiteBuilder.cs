@@ -10,12 +10,16 @@ internal partial class SiteBuilder
 	public const string H1Title = "JJ's blog";
 	public const string ArticleTitleSuffix = H1Title;
 
+	private readonly Uri repoUrl;
+	private readonly string branch;
 	private readonly Uri? host;
 	private readonly bool force;
 	private readonly ConcurrentBag<Article> articles = new();
 
-	public SiteBuilder(Uri? host, bool force)
+	public SiteBuilder(Uri repo, string branch, Uri? host, bool force)
 	{
+		this.repoUrl = repo;
+		this.branch = branch;
 		this.host = host;
 		this.force = force;
 	}

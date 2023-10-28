@@ -48,9 +48,10 @@ internal partial class SiteBuilder
 		{
 			return;
 		}
-		else if (force)
+		else if (force & Utils.IsCI)
 		{
 			// Not elegant, but easy to do now.
+			// Only run in CI to avoid slow down local building.
 			var data = await new HttpClient().GetStringAsync("https://necolas.github.io/normalize.css/latest/normalize.css");
 			if (!data.Contains("v8.0.1"))
 				throw new ArgumentException("normalize.css is out of date");

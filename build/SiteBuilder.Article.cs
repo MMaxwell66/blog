@@ -26,7 +26,11 @@ internal partial class SiteBuilder
 		Markdown.ToHtml(document, output, pipeline);
 		await WriteFooter(output);
 
-		var article = new Article() { UrlPath = urlPath, Title = title.ToString() };
+		var article = new Article() {
+			SrcPath = srcFilePath.Replace('\\', '/'),
+			UrlPath = urlPath,
+			Title = title.ToString()
+		};
 
 		var trimmed = document.TrimReadMore();
 		article.ReadLessText = Markdown.ToHtml(document, pipeline);

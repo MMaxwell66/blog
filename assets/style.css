@@ -49,6 +49,17 @@ article > header {
 	color: #bae1e1;
 }
 
+.time {
+	color: #c8c8c8;
+	font-size: 14px;
+}
+.time a, .time a:visited {
+	color: #c8c8c8;
+}
+.time a:hover, .time a:focus, .time a:active {
+	color: #009bdf;
+}
+
 .content {
 	font-size: 16px;
 	color: #555;

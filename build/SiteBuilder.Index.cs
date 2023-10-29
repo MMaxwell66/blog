@@ -22,8 +22,21 @@ $"""
 	<article>
 		<header>
 			<h2 class="title"><a href="{article.UrlPath}" rel="bookmark">{article.Title}</a></h2>
-			<!-- TODO: post time & updated time -->
-			<!-- <div><span></span></div> -->
+			<div class="time">
+				<time datetime="{article.PostTime:yyyy-MM-ddTHH:mm:ssK}">{article.PostTime:yyyy/MM/dd}</time>
+
+""");
+			if (article.EditTime != article.PostTime)
+				// fix to live branch now, no support for PR review now.
+				await output.WriteAsync(
+$"""
+				<span><a href="{repoUrl}/commits/{branch}/{article.SrcPath}">• edited</a></span>
+
+""");
+
+			await output.WriteAsync(
+"""
+			</div>
 		</header>
 		<div class="content">
 

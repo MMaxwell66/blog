@@ -80,11 +80,30 @@ internal partial class SiteBuilder
 
 	private static Task WriteFooter(TextWriter output)
 	{
-		return output.WriteAsync("</body>\n</html>");
+		return output.WriteAsync(
+"""
+<script>
+const thisYearFormatter = new Intl.DateTimeFormat(navigator.language, { day: 'numeric', month: 'short' });
+const pastYearFormatter = new Intl.DateTimeFormat(navigator.language, { day: 'numeric', month: 'short', year:'numeric'});
+const titleFormatter = new Intl.DateTimeFormat(navigator.language, { day: 'numeric', month: 'short', year: 'numeric', hour: 'numeric', minute: '2-digit', timeZoneName: 'short' });
+const thisYear = new Date().getUTCFullYear();
+document.querySelectorAll('time').forEach(t => {
+	const parsed = Date.parse(t.dateTime);
+	if (Number.isNaN(parsed)) return;
+	const date = new Date(parsed);
+	t.textContent = (date.getUTCFullYear() === thisYear ? thisYearFormatter : pastYearFormatter).format(date);
+	t.setAttribute('title', titleFormatter.format(date));
+	t.setAttribute('lang', navigator.language);
+});
+</script>
+</body>
+</html>
+""");
 	}
 
 	private struct Article
 	{
+		public string SrcPath;
 		public string UrlPath;
 		public string Title;
 		public DateTime PostTime;

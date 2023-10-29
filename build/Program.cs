@@ -7,13 +7,20 @@ class Program
 	/// My blog's build system.
 	/// </summary>
 	/// <param name="host">host name for the blog</param>
+	/// <param name="repo_url">url to the repository contains the blog</param>
+	/// <param name="branch">current branch of the repo</param>
 	/// <param name="force">force generation</param>
 	/// <param name="verbosity"></param>
 	static async Task Main(
 		Uri? host = null,
+		Uri? repo_url = null,
+		string branch = "live",
 		bool force = false,
 		Verbosity verbosity = Verbosity.Normal)
 	{
+		// default repo URL, for easier local build
+		repo_url ??= new Uri("https://github.com/MMaxwell66/blog");
+
 		Log.level = verbosity;
 
 		if (!Directory.Exists(SiteBuilder.ArticlesFolder))
@@ -25,7 +32,7 @@ class Program
 
 		Log.WriteLine($"Building for '{host?.ToString() ?? "localhost"}' ...");
 		Log.WriteLine($"Building article folder: {Path.GetFullPath(SiteBuilder.ArticlesFolder)}");
-		var siteBuilder = new SiteBuilder(host, force);
+		var siteBuilder = new SiteBuilder(repo_url, branch, host, force);
 
 		await Parallel.ForEachAsync(
 			new FileSystemEnumerable<(string, bool)>(
@@ -59,11 +66,8 @@ class Program
 			// TODO: as we parallel, need an identifier to distinct iter when we have more log
 			Log.DiagWriteLine($"Building file: {relativePath}");
 
-			var input = await File.ReadAllTextAsync(srcFile);
-			using var output = new StreamWriter(destFile);
-
 			var destUrlPath = Path.ChangeExtension(relativePath, null);
-			await siteBuilder.BuildArticle(destUrlPath, output, input);
+			await siteBuilder.BuildArticle(destUrlPath, destFile, srcFile);
 		});
 
 		await siteBuilder.PostArticlesBuild();

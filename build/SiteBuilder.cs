@@ -10,12 +10,16 @@ internal partial class SiteBuilder
 	public const string H1Title = "JJ's blog";
 	public const string ArticleTitleSuffix = H1Title;
 
+	private readonly Uri repoUrl;
+	private readonly string branch;
 	private readonly Uri? host;
 	private readonly bool force;
 	private readonly ConcurrentBag<Article> articles = new();
 
-	public SiteBuilder(Uri? host, bool force)
+	public SiteBuilder(Uri repo, string branch, Uri? host, bool force)
 	{
+		this.repoUrl = repo;
+		this.branch = branch;
 		this.host = host;
 		this.force = force;
 	}
@@ -44,9 +48,10 @@ internal partial class SiteBuilder
 		{
 			return;
 		}
-		else if (force)
+		else if (force & Utils.IsCI)
 		{
 			// Not elegant, but easy to do now.
+			// Only run in CI to avoid slow down local building.
 			var data = await new HttpClient().GetStringAsync("https://necolas.github.io/normalize.css/latest/normalize.css");
 			if (!data.Contains("v8.0.1"))
 				throw new ArgumentException("normalize.css is out of date");
@@ -75,14 +80,34 @@ internal partial class SiteBuilder
 
 	private static Task WriteFooter(TextWriter output)
 	{
-		return output.WriteAsync("</body>\n</html>");
+		return output.WriteAsync(
+"""
+<script>
+const thisYearFormatter = new Intl.DateTimeFormat(navigator.language, { day: 'numeric', month: 'short' });
+const pastYearFormatter = new Intl.DateTimeFormat(navigator.language, { day: 'numeric', month: 'short', year:'numeric'});
+const titleFormatter = new Intl.DateTimeFormat(navigator.language, { day: 'numeric', month: 'short', year: 'numeric', hour: 'numeric', minute: '2-digit', timeZoneName: 'short' });
+const thisYear = new Date().getUTCFullYear();
+document.querySelectorAll('time').forEach(t => {
+	const parsed = Date.parse(t.dateTime);
+	if (Number.isNaN(parsed)) return;
+	const date = new Date(parsed);
+	t.textContent = (date.getUTCFullYear() === thisYear ? thisYearFormatter : pastYearFormatter).format(date);
+	t.setAttribute('title', titleFormatter.format(date));
+	t.setAttribute('lang', navigator.language);
+});
+</script>
+</body>
+</html>
+""");
 	}
 
 	private struct Article
 	{
+		public string SrcPath;
 		public string UrlPath;
 		public string Title;
 		public DateTime PostTime;
+		public DateTime EditTime;
 		public string ReadLessText;
 	}
 }

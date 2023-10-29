@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using Markdig.Helpers;
 
@@ -32,6 +33,26 @@ internal static class Utils
 		}
 
 		return slice.Text.AsMemory(slice.Start, slice.Length);
+	}
+
+	public static bool IsCI = bool.TryParse(Environment.GetEnvironmentVariable("CI"), out var ci) && ci;
+
+	public static Task<string> RunCommandAndGetOutput(string name, string args)
+	{
+		using var proc = new Process
+		{
+			StartInfo = new ProcessStartInfo
+			{
+				FileName = name,
+				Arguments = args,
+				UseShellExecute = false,
+				RedirectStandardOutput = true,
+				CreateNoWindow = true
+			}
+		};
+
+		proc.Start();
+		return proc.StandardOutput.ReadToEndAsync();
 	}
 
 	[DoesNotReturn]

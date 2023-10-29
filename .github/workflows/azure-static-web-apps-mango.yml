@@ -20,6 +20,8 @@ jobs:
       HOST_NAME: https://mango-mushroom-0f508f700.3.azurestaticapps.net
     steps:
       - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
       - name: Setup .NET
         uses: actions/setup-dotnet@v3
         with:

@@ -1,5 +1,7 @@
 internal partial class SiteBuilder
 {
+	private static Task<(string abbr, string full)> HeadHash = GetHeadHash();
+
 	public async Task BuildIndexPage()
 	{
 		using var output = new StreamWriter(Path.Join(OutputFolder, "index.html"));
@@ -50,18 +52,30 @@ $"""
 """);
 		}
 
+		var (headAbbr, headFull) = await HeadHash;
 		await output.WriteAsync(
-"""
+$"""
 	<nav>
 		<!-- TODO: pagination -->
 	</nav>
 </main>
 <footer>
-	<!-- TODO -->
+	<div>
+		<span>Commit <a href="{repoUrl}/commits/{headFull}" target="_blank">{headAbbr}</a> on <a href="{repoUrl}" target="_blank">GitHub</a></span> | <span><a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" target="_blank">CC BY-NC-SA 4.0</a></span><br>
+		<span>Theme based on <a href="http://www.matrix67.com/blog/wp-content/themes/matrix67/style.css" target="_blank">Mathix67</a></span>
+	</div>
 </footer>
 
 """);
 
 		await WriteFooter(output);
+	}
+
+	private static async Task<(string abbr, string full)> GetHeadHash()
+	{
+		var hashes = (await Utils.RunCommandAndGetOutput("git", "log -1 --pretty=\"format:%h %H\"")).Split(' ');
+		if (hashes.Length != 2)
+			throw new ApplicationException("Invalid git head.");
+		return (hashes[0], hashes[1]);
 	}
 }

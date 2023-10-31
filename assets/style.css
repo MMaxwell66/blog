@@ -7,6 +7,7 @@ body {
 	background: #f8f8f8;
 	width: 700px;
 	margin: 0 auto;
+	line-height: 1.5;
 }
 
 body > header {
@@ -69,6 +70,10 @@ article > header {
 }
 .content h3 {
 	font-size: 1em;
+}
+::selection {
+	background: #009bdf;
+	color: #fff;
 }
 
 footer {

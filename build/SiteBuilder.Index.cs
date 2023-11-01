@@ -1,12 +1,42 @@
 internal partial class SiteBuilder
 {
+	private const int ArticlePerPage = 5;
+
 	private static Task<(string abbr, string full)> HeadHash = GetHeadHash();
 
-	public async Task BuildIndexPage()
+	public async Task BuildIndexPages()
 	{
-		using var output = new StreamWriter(Path.Join(OutputFolder, "index.html"));
+		// ThenBy is just to make sure the order is consistence
+		var orderedArticles = articles.OrderByDescending(article => article.PostTime).ThenBy(article => article.UrlPath).ToArray();
+		if (orderedArticles.Length > ArticlePerPage)
+			Directory.CreateDirectory(Path.Join(OutputFolder, "page"));
 
-		await WriteHeader(output, MainTitle, IndexQuote);
+		var pages = (orderedArticles.Length + ArticlePerPage - 1) / ArticlePerPage;
+		if (pages == 0) pages = 1;
+
+		await Parallel.ForEachAsync(
+			Enumerable.Range(1, pages),
+			new ParallelOptions(){ MaxDegreeOfParallelism = 1 },
+			async (i, _) =>
+			{
+				// i is 1-based
+				var cnt = Math.Min(ArticlePerPage, orderedArticles.Length - (i - 1) * ArticlePerPage);
+				var href = i == 1 ? "index.html" : Path.Join("page", $"{i}.html");
+				await using var output = new StreamWriter(Path.Join(OutputFolder, href));
+				await BuildIndexPage(
+					new(orderedArticles, (i - 1) * ArticlePerPage, cnt),
+					output,
+					i,
+					i == pages
+				);
+			}
+		);
+	}
+
+	private async Task BuildIndexPage(ReadOnlyMemory<Article> articles, StreamWriter output, int pageNo, bool isLast)
+	{
+		var title = pageNo == 1 ? MainTitle : $"{MainTitle} - Page {pageNo}";
+		await WriteHeader(output, title, IndexQuote);
 
 		await output.WriteAsync(
 $"""
@@ -15,10 +45,9 @@ $"""
 
 """);
 
-		// TODO: pagination
-		// ThenBy is just to make sure the order is consistence
-		foreach (var article in articles.OrderByDescending(article => article.PostTime).ThenBy(article => article.UrlPath))
+		for (var i = 0; i < articles.Length; i++)
 		{
+			var article = articles.Span[i];
 			await output.WriteAsync(
 $"""
 	<article>
@@ -54,9 +83,32 @@ $"""
 
 		var (headAbbr, headFull) = await HeadHash;
 		await output.WriteAsync(
-$"""
+"""
+	<hr>
 	<nav>
-		<!-- TODO: pagination -->
+
+""");
+
+		if (pageNo != 1)
+		{
+			var href = pageNo == 2 ? "/" : $"/page/{pageNo - 1}";
+			await output.WriteAsync(
+$"""
+		<div style="float: left"><a href="{href}">NEWER</a></div>
+
+""");
+		}
+		if (!isLast)
+		{
+			await output.WriteAsync(
+$"""
+		<div style="float: right"><a href="/page/{pageNo + 1}">OLDER</a></div>
+
+""");
+		}
+
+		await output.WriteAsync(
+$"""
 	</nav>
 </main>
 <footer>

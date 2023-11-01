@@ -28,7 +28,7 @@ internal partial class SiteBuilder
 	{
 		var tasks = new List<Task>()
 		{
-			BuildIndexPage(),
+			BuildIndexPages(),
 			CopyAssets(),
 		};
 
@@ -71,7 +71,7 @@ internal partial class SiteBuilder
 		<head>
 			<meta charset="utf-8">
 			<title>{title} | {suffix}</title>
-			<link rel="stylesheet" href="assets/style.css">
+			<link rel="stylesheet" href="/assets/style.css">
 		</head>
 		<body>
 

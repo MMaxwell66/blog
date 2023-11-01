@@ -51,11 +51,11 @@ article > header {
 }
 
 .time {
-	color: #c8c8c8;
+	color: #85d7db;
 	font-size: 14px;
 }
 .time a, .time a:visited {
-	color: #c8c8c8;
+	color: #85d7db;
 }
 .time a:hover, .time a:focus, .time a:active {
 	color: #009bdf;
@@ -74,6 +74,31 @@ article > header {
 ::selection {
 	background: #009bdf;
 	color: #fff;
+}
+
+hr {
+	margin-bottom: 1em;
+	border-style: solid;
+	color: #eee;
+}
+
+nav::after {
+	content: '';
+	clear: both;
+	display: block;
+}
+nav a,
+nav a:visited,
+nav a:hover,
+nav a:focus,
+nav a:active {
+	display: block;
+	background: #85d7db;
+	color: #fff;
+	text-align: center;
+	padding: 0 5px;
+	min-width: 70px;
+	font-size: 14px;
 }
 
 footer {

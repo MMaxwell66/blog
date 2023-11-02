@@ -28,8 +28,9 @@ internal partial class SiteBuilder
 	{
 		var tasks = new List<Task>()
 		{
-			BuildIndexPage(),
+			BuildIndexPages(),
 			CopyAssets(),
+			BuildStaticWebAppConfig(),
 		};
 
 		return Task.WhenAll(tasks);
@@ -63,6 +64,24 @@ internal partial class SiteBuilder
 		cssInputInfo.CopyTo(cssOutputPath, true);
 	}
 
+	private static Task BuildStaticWebAppConfig()
+	{
+		var configFilePath = Path.Join(OutputFolder, "staticwebapp.config.json");
+		return File.WriteAllTextAsync(
+			configFilePath,
+"""
+{
+	"routes": [
+		{
+			"route": "/page/1",
+			"redirect": "/",
+			"statusCode": 301
+		}
+	]
+}
+""");
+	}
+
 	private static Task WriteHeader(TextWriter output, ReadOnlySpan<char> title, string suffix)
 	{
 		return output.WriteAsync($"""
@@ -71,7 +90,7 @@ internal partial class SiteBuilder
 		<head>
 			<meta charset="utf-8">
 			<title>{title} | {suffix}</title>
-			<link rel="stylesheet" href="assets/style.css">
+			<link rel="stylesheet" href="/assets/style.css">
 		</head>
 		<body>
 

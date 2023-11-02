@@ -51,6 +51,8 @@ class Program
 			var srcFile = Path.Join(SiteBuilder.ArticlesFolder, relativePath);
 			var destFile = Path.Join(SiteBuilder.OutputFolder, isDirectory ? relativePath : Path.ChangeExtension(relativePath, ".html"));
 			if (isDirectory) {
+				if (relativePath == "assets" || relativePath == "page")
+					throw new ArgumentException($"Article under reserved folder {relativePath}.");
 				Directory.CreateDirectory(destFile);
 				return;
 			}

@@ -30,6 +30,7 @@ internal partial class SiteBuilder
 		{
 			BuildIndexPages(),
 			CopyAssets(),
+			BuildStaticWebAppConfig(),
 		};
 
 		return Task.WhenAll(tasks);
@@ -61,6 +62,24 @@ internal partial class SiteBuilder
 			Directory.CreateDirectory(Path.Join(OutputFolder, "assets"));
 
 		cssInputInfo.CopyTo(cssOutputPath, true);
+	}
+
+	private static Task BuildStaticWebAppConfig()
+	{
+		var configFilePath = Path.Join(OutputFolder, "staticwebapp.config.json");
+		return File.WriteAllTextAsync(
+			configFilePath,
+"""
+{
+	"routes": [
+		{
+			"route": "/page/1",
+			"redirect": "/",
+			"statusCode": 301
+		}
+	]
+}
+""");
 	}
 
 	private static Task WriteHeader(TextWriter output, ReadOnlySpan<char> title, string suffix)

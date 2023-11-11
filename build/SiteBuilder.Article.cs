@@ -10,6 +10,8 @@ internal partial class SiteBuilder
 	private static readonly MarkdownPipeline pipeline = new MarkdownPipelineBuilder()
 		.UseYamlFrontMatter()
 		.Use<ReadMoreExtension>()
+		.UseSoftlineBreakAsHardlineBreak()
+		.UseAutoLinks()
 		.Build();
 	public async Task BuildArticle(string urlPath, string destFilePath, string srcFilePath)
 	{
@@ -22,20 +24,11 @@ internal partial class SiteBuilder
 		if (title.IsEmpty)
 			throw new ArgumentException($"[{urlPath}]: do not have title");
 
-		await WriteHeader(output, title.Span, ArticleTitleSuffix);
-		Markdown.ToHtml(document, output, pipeline);
-		await WriteFooter(output);
-
 		var article = new Article() {
 			SrcPath = srcFilePath.Replace('\\', '/'),
 			UrlPath = urlPath,
 			Title = title.ToString()
 		};
-
-		var trimmed = document.TrimReadMore();
-		article.ReadLessText = Markdown.ToHtml(document, pipeline);
-		if (trimmed)
-			article.ReadLessText += $"<p><a href={urlPath}>Read more...</a></p>";
 
 		// Perf: this git log command might not be efficient as it goes through commit history multiple times.
 		// PostTime
@@ -50,6 +43,63 @@ internal partial class SiteBuilder
 		article.EditTime = article.PostTime;
 		if (!string.IsNullOrEmpty(time))
 			article.EditTime = DateTimeOffset.ParseExact(time, "yyyy-MM-ddTHH:mm:ssK", CultureInfo.InvariantCulture).UtcDateTime;
+
+		// Output HTML
+		await WriteHeader(output, title.Span, ArticleTitleSuffix);
+		await output.WriteAsync(
+$"""
+<header><h1><a href="{host}">{H1Title}</a></h1></header>
+<main>
+	<article>
+		<header>
+			<h2 class="title"><a href="{article.UrlPath}" rel="bookmark">{article.Title}</a></h2>
+			<div class="time">
+				<time datetime="{article.PostTime:yyyy-MM-ddTHH:mm:ssK}">{article.PostTime:yyyy/MM/dd}</time>
+
+""");
+		if (article.EditTime != article.PostTime)
+			// fix to live branch now, no support for PR review now.
+			await output.WriteAsync(
+$"""
+				<span><a href="{repoUrl}/commits/{branch}/{article.SrcPath}">• edited</a></span>
+
+""");
+		await output.WriteAsync(
+"""
+			</div>
+		</header>
+		<div class="content">
+
+""");
+		Markdown.ToHtml(document, output, pipeline);
+		await output.WriteAsync(
+"""
+		</div>
+	</article>
+
+""");
+
+		// TODO: If we want to show the latest commit of the article instead of whole blog? But that also effect the css etc
+		// TODO: could optimize the interpolation
+		var (headAbbr, headFull) = await HeadHash;
+		await output.WriteAsync(
+$"""
+	<hr>
+</main>
+<footer>
+	<div>
+		<span>Commit <a href="{repoUrl}/commits/{headFull}" target="_blank">{headAbbr}</a> on <a href="{repoUrl}" target="_blank">GitHub</a></span> | <span><a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" target="_blank">CC BY-NC-SA 4.0</a></span><br>
+		<span>Theme based on <a href="http://www.matrix67.com/blog/wp-content/themes/matrix67/style.css" target="_blank">Mathix67</a></span>
+	</div>
+</footer>
+
+""");
+		await WriteFooter(output);
+
+		var trimmed = document.TrimReadMore();
+		article.ReadLessText = Markdown.ToHtml(document, pipeline);
+		if (trimmed)
+			article.ReadLessText += $"""<p><a href="{urlPath}#read-more">Read more...</a></p>""";
 
 		articles.Add(article);
 	}

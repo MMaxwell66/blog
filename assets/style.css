@@ -5,7 +5,8 @@ html{line-height:1.15;-webkit-text-size-adjust:100%}body{margin:0}main{display:b
 
 body {
 	background: #f8f8f8;
-	width: 700px;
+	font-family: 'Helvetica Neue', Arial, sans-serif;
+	width: 800px;
 	margin: 0 auto;
 	line-height: 1.5;
 }

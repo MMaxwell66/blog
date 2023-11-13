@@ -1,5 +1,5 @@
 ---
-title: A brief introduction to DNS
+title: DNS杂记：resolv.conf, zone, dig
 ---
 
 最近因为感兴趣的东西和DNS有关，所以了解了一些零零碎碎的关于DNS的知识，并略做记录，之后又有想了解的时候再进一步补充。
@@ -28,7 +28,7 @@ net.                    172800  IN      NS      a.gtld-servers.net.
 net.                    172800  IN      NS      b.gtld-servers.net.
 # ...
 ```
-2. glue record, 比如上面的net我们会发现它的NS服务器属于它所在的zone中，那么访问NS服务器就需要查询 net zone 的NS服务器，形成了递归。所以这种情况中的NS服务器的地址要显示提供给parent zone，称为 glue record, 并在additional section中提供。
+2. glue record, 比如上面的net我们会发现它的NS服务器属于它所在的zone中，那么访问NS服务器就需要查询 net zone 的NS服务器，形成了递归。所以这种情况中的NS服务器的地址要显式提供给parent zone，称为 glue record, 并在additional section中提供。
 ```bash
 a.gtld-servers.net.     172800  IN      A       192.5.6.30
 b.gtld-servers.net.     172800  IN      A       192.33.14.30
@@ -73,7 +73,8 @@ Raw message 构造代码见 [`dns_message_render(section|end)`](https://github.c
 # controlled by +qr
 ;; Sending:
 
-# 这些对应 DNS 包中的Header部分 https://datatracker.ietf.org/doc/html/rfc6895#section-2
+# 这些对应 DNS 包中的Header部分
+# https://datatracker.ietf.org/doc/html/rfc6895#section-2
 # flags中的aa很关键，它说明了这个信息是不是authoritative data
 ;; ->>HEADER<<- opcode: QUERY, status: NOERROR, id: 28461
 ;; flags: rd ad; QUERY: 1, ANSWER: 0, AUTHORITY: 0, ADDITIONAL: 1
